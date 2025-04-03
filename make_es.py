@@ -14,7 +14,7 @@ from transMedia import transMedia
 def create_gui():
     """创建图形用户界面"""
     root = tk.Tk()
-    root.title("天马G资源转换工具")
+    root.title("天马转换ES工具")
     
     # 创建日志框架
     log_frame = tk.Frame(root)
@@ -84,8 +84,18 @@ def create_gui():
         else:
             tk.messagebox.showerror("错误", "请先选择源文件夹和目标文件夹")
     
+    # 执行按钮
     tk.Button(root, text="执行脚本", command=execute_scripts).grid(row=2, column=1, pady=10)
     
+    # 添加GitHub链接
+    def open_github():
+        import webbrowser
+        webbrowser.open("https://github.com/magicsea/estool")
+    
+    github_link = tk.Label(root, text="by github.com/magicsea/estool", fg="blue", cursor="hand2")
+    github_link.grid(row=4, column=0, columnspan=3, pady=5)
+    github_link.bind("<Button-1>", lambda e: open_github())
+
     # 窗口关闭时保存配置
     def on_closing():
         config['PATHS'] = {

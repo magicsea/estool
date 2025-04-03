@@ -3,7 +3,7 @@ import os
 import shutil
 
 # 打包配置
-APP_NAME = '天马G资源转换工具'
+APP_NAME = '天马转换ES工具'
 SCRIPT_FILE = 'make_es.py'
 ICON_FILE = None  # 可以设置为图标路径，如'icon.ico'
 DIST_DIR = 'dist'
