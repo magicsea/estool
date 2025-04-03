@@ -9,6 +9,7 @@ import configparser
 from pathlib import Path
 import threading  # 添加线程支持
 import queue  # 添加队列支持
+import time
 # 修改导入语句
 from transName import transName 
 from transMedia import transMedia
@@ -24,11 +25,11 @@ def create_gui():
     
     # 日志文本框
     log_text = tk.Text(log_frame, height=10, state='disabled')
-    log_text.pack(fill='both', expand=True)
+    log_text.pack(side='left', fill='both', expand=True)  # 修改为左侧
     
     # 滚动条
     scrollbar = tk.Scrollbar(log_frame, command=log_text.yview)
-    scrollbar.pack(side='right', fill='y')
+    scrollbar.pack(side='right', fill='y')  # 保持右侧
     log_text['yscrollcommand'] = scrollbar.set
     
     # 创建消息队列
@@ -39,6 +40,7 @@ def create_gui():
         message_queue.put(message)
     
     # 处理消息队列的函数
+    # 修改process_message_queue函数，缩短检查间隔
     def process_message_queue():
         try:
             while True:
@@ -51,8 +53,8 @@ def create_gui():
         except queue.Empty:
             pass
         finally:
-            # 每100毫秒检查一次队列
-            root.after(100, process_message_queue)
+            # 缩短检查间隔到50毫秒
+            root.after(50, process_message_queue)
     
     # 启动消息处理
     process_message_queue()
@@ -102,7 +104,13 @@ def create_gui():
                     # 传入日志函数
                     transName(source_path, target_path, log_message)
                     log_message("------gamelist转换完成------")
-                    transMedia(source_path, target_path, log_message)
+                    
+                    # 修改transMedia调用，添加进度反馈
+                    def progress_callback(current, total,currDir):
+                        log_message(f"处理媒体文件中:{current}/{total}  {currDir}")
+                        time.sleep(0.01)  # 短暂释放GIL锁
+                    
+                    transMedia(source_path, target_path, log_message, progress_callback)
                     log_message("------media转换完成------")
                     log_message("所有转换完成！")
                     # 在主线程中重新启用按钮
