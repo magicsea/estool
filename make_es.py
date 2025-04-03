@@ -3,10 +3,12 @@ import xml.etree.ElementTree as ET
 from datetime import datetime  
 from xml.dom import minidom 
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import filedialog, messagebox  # 添加messagebox导入
 import subprocess
 import configparser
 from pathlib import Path
+import threading  # 添加线程支持
+import queue  # 添加队列支持
 # 修改导入语句
 from transName import transName 
 from transMedia import transMedia
@@ -29,13 +31,31 @@ def create_gui():
     scrollbar.pack(side='right', fill='y')
     log_text['yscrollcommand'] = scrollbar.set
     
+    # 创建消息队列
+    message_queue = queue.Queue()
+    
     # 日志输出函数
-    # 在文件顶部添加
     def log_message(message):
-        log_text.configure(state='normal')
-        log_text.insert('end', message + '\n')
-        log_text.configure(state='disabled')
-        log_text.see('end')
+        message_queue.put(message)
+    
+    # 处理消息队列的函数
+    def process_message_queue():
+        try:
+            while True:
+                message = message_queue.get_nowait()
+                log_text.configure(state='normal')
+                log_text.insert('end', message + '\n')
+                log_text.configure(state='disabled')
+                log_text.see('end')
+                message_queue.task_done()
+        except queue.Empty:
+            pass
+        finally:
+            # 每100毫秒检查一次队列
+            root.after(100, process_message_queue)
+    
+    # 启动消息处理
+    process_message_queue()
     
     # 读取配置文件
     config = configparser.ConfigParser()
@@ -71,18 +91,35 @@ def create_gui():
         target_path = target_entry.get()
         if source_path and target_path:
             log_message("开始执行转换...")
-            try:
-                # 传入日志函数
-                transName(source_path, target_path, log_message)
-                log_message("------gamelist转换完成------")
-                transMedia(source_path, target_path, log_message)
-                log_message("------media转换完成------")
-                log_message("所有转换完成！")
-            except Exception as e:
-                log_message(f"错误: {str(e)}")
-                tk.messagebox.showerror("错误", f"执行出错: {str(e)}")
+            
+            # 禁用执行按钮，防止重复点击
+            execute_button = root.nametowidget('.!button3')  # 获取执行按钮
+            execute_button.config(state='disabled')
+            
+            # 在单独的线程中执行耗时操作
+            def run_conversion():
+                try:
+                    # 传入日志函数
+                    transName(source_path, target_path, log_message)
+                    log_message("------gamelist转换完成------")
+                    transMedia(source_path, target_path, log_message)
+                    log_message("------media转换完成------")
+                    log_message("所有转换完成！")
+                    # 在主线程中重新启用按钮
+                    root.after(0, lambda: execute_button.config(state='normal'))
+                except Exception as e:
+                    error_msg = f"错误: {str(e)}"
+                    log_message(error_msg)
+                    # 在主线程中显示错误和重新启用按钮
+                    root.after(0, lambda: [
+                        messagebox.showerror("错误", f"执行出错: {str(e)}"),
+                        execute_button.config(state='normal')
+                    ])
+            
+            # 启动转换线程
+            threading.Thread(target=run_conversion, daemon=True).start()
         else:
-            tk.messagebox.showerror("错误", "请先选择源文件夹和目标文件夹")
+            messagebox.showerror("错误", "请先选择源文件夹和目标文件夹")
     
     # 执行按钮
     tk.Button(root, text="执行脚本", command=execute_scripts).grid(row=2, column=1, pady=10)
