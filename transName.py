@@ -35,7 +35,7 @@ def read_metadata(file_path):
         merged_games.append(current_game)  
     return merged_games  
   
-def create_gamelist_xml(games, target_folder, subdirectories,log_func):  
+def create_gamelist_xml(games, target_folder, subdirectories, log_func):  
     """创建gamelist.xml文件"""
     root = ET.Element("gameList")  
     for game in games:  
@@ -45,17 +45,23 @@ def create_gamelist_xml(games, target_folder, subdirectories,log_func):
         desc_elem = ET.SubElement(game_elem, "desc").text = game.get('description', "")  
         playcount_elem = ET.SubElement(game_elem, "playcount").text = "1"    
         lastplayed_elem = ET.SubElement(game_elem, "lastplayed").text = "" 
-               
-      
-    xml_str = ET.tostring(root, encoding='utf8', method='xml')
-    xml_str = xml_str.decode('utf8')
+
+    # 使用minidom正确格式化XML
+    xml_str = ET.tostring(root, encoding='utf-8')
+    dom = minidom.parseString(xml_str)
+    pretty_xml = dom.toprettyxml(indent='  ')
     
-    log_func(f"正在处理子目录: {subdirectories}")  # 替换原来的print语句
+    # 移除空行
+    lines = pretty_xml.splitlines()
+    non_empty_lines = [line for line in lines if line.strip()]
+    pretty_xml = '\n'.join(non_empty_lines)
+    
+    log_func(f"正在处理子目录: {subdirectories}")
     target_subfolder = os.path.join(target_folder, 'gamelists', subdirectories)   
     os.makedirs(target_subfolder, exist_ok=True)  
     xml_file_path = os.path.join(target_subfolder, 'gamelist.xml')  
     with open(xml_file_path, 'w', encoding='utf-8') as f:  
-        f.write(xml_str)  
+        f.write(pretty_xml)  
  
 def list_subdirectories(path):  
     """  
