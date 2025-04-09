@@ -40,12 +40,18 @@ def read_metadata(file_path):
             current_game['sort-by'] = game_info['sort-by']  
     if current_game:  
         merged_games.append(current_game)  
-    print("read_metadata:",name)
-    return merged_games  
+    #print("read_metadata:",name)
+    return merged_games,name  
   
-def create_gamelist_xml(games, target_folder, subdirectories,collection_dir, log_func):  
+def create_gamelist_xml(games, target_folder, subdirectories,collection_dir,folders, log_func):  
     """创建gamelist.xml文件"""
+    print("create_gamelist_xml:",subdirectories,collection_dir,folders)
     root = ET.Element("gameList")  
+    for folder in folders:  
+        game_elem = ET.SubElement(root, "folder")  
+        ET.SubElement(game_elem, "path").text = "./" + folder.get('path', "")
+        ET.SubElement(game_elem, "name").text =  folder.get('name', "")      
+
     for game in games:  
         game_elem = ET.SubElement(root, "game")  
         # 如果collection_dir不为空，将path前要加上collection_dir
@@ -76,7 +82,7 @@ def create_gamelist_xml(games, target_folder, subdirectories,collection_dir, log
     target_subfolder = os.path.join(target_folder, 'gamelists', subdirectories)   
     os.makedirs(target_subfolder, exist_ok=True)  
     xml_file_path = os.path.join(target_subfolder, 'gamelist.xml')  
-    print("create_gamelist_xml:",xml_file_path)
+    print("create_gamelist_xml write:",xml_file_path)
     with open(xml_file_path, 'w', encoding='utf-8') as f:  
         f.write(pretty_xml)  
  
@@ -103,7 +109,7 @@ def transName(source_folder, target_folder, log_func=None):
     for root, dirs, files in os.walk(source_folder):
         if 'metadata.pegasus.txt' in files:
             metadata_path = os.path.join(root, 'metadata.pegasus.txt')
-            games = read_metadata(metadata_path)
+            games , metaName = read_metadata(metadata_path)
             
             if games:
                 parent_dir = os.path.dirname(root)
@@ -117,12 +123,15 @@ def transName(source_folder, target_folder, log_func=None):
                     if collection_name not in collections:
                         collections[collection_name] = {
                             'path': parent_dir,
-                            'games': []
+                            'games': [],
+                            'folders': []
                         }
+                    print("add new collection:",collection_name,parent_dir,platform_name,metaName)
                     collections[collection_name]['games'].extend(games)
+                    collections[collection_name]['folders'].append({'path':platform_name,'name':metaName})
                 else:
                     # 普通平台目录立即处理
-                    create_gamelist_xml(games, target_folder, platform_name, "", log_func)
+                    create_gamelist_xml(games, target_folder, platform_name, "",[], log_func)
     
     # 第二次遍历：处理所有合集目录
     for collection_name, collection_data in collections.items():
@@ -132,6 +141,7 @@ def transName(source_folder, target_folder, log_func=None):
             target_folder, 
             collection_name,
             collection_name, 
+            collection_data['folders'],
             log_func
         )
 
