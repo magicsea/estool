@@ -67,7 +67,7 @@ def transMedia(folder_a, folder_b, log_func, progress_callback=None):
                         if not os.path.exists(subdir):
                             os.makedirs(subdir, exist_ok=True)
                         new_path = os.path.join(subdir, new_name)
-                        #print("copy:",item_path,new_path)
+                        # print("copy:",item_path,new_path)
                         shutil.copy2(item_path, new_path)
                         processed_files += 1
                         

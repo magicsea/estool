@@ -5,6 +5,7 @@ from xml.dom import minidom
 
 def read_metadata(file_path):  
     """读取metadata.pegasus.txt文件并返回game, file, description的字典列表"""  
+    name = ""
     games = []  
     try:  
         with open(file_path, 'r', encoding='utf-8') as f:  
@@ -13,7 +14,9 @@ def read_metadata(file_path):
                 if not line or line.startswith('#'):  
                     continue  
                 parts = line.split(':')  
-                if len(parts) == 2 and parts[0].strip().lower() in ['game', 'file', 'description']:  
+                if len(parts) == 2 and parts[0].strip().lower() in ['collection']:  
+                    name = parts[1].strip()
+                if len(parts) == 2 and parts[0].strip().lower() in ['game', 'file', 'description','developer','sort-by']:  
                     games.append({parts[0].strip().lower(): parts[1].strip()})  
     except Exception as e:  
         print(f"Error reading {file_path}: {e}")  
@@ -31,18 +34,31 @@ def read_metadata(file_path):
             current_game['file'] = game_info['file']  
         if 'description' in game_info and current_game:  
             current_game['description'] = game_info['description']  
+        if 'developer' in game_info and current_game:  
+            current_game['developer'] = game_info['developer']  
+        if 'sort-by' in game_info and current_game:  
+            current_game['sort-by'] = game_info['sort-by']  
     if current_game:  
         merged_games.append(current_game)  
+    print("read_metadata:",name)
     return merged_games  
   
-def create_gamelist_xml(games, target_folder, subdirectories, log_func):  
+def create_gamelist_xml(games, target_folder, subdirectories,collection_dir, log_func):  
     """创建gamelist.xml文件"""
     root = ET.Element("gameList")  
     for game in games:  
         game_elem = ET.SubElement(root, "game")  
-        path_elem = ET.SubElement(game_elem, "path").text ="./" + game.get('file', "")  
+        # 如果collection_dir不为空，将path前要加上collection_dir
+        if collection_dir:
+            path_elem = ET.SubElement(game_elem, "path").text = "./" + collection_dir + "/" + game.get('file', "")
+        else:
+            path_elem = ET.SubElement(game_elem, "path").text = "./" + game.get('file', "")
+
+        #path_elem = ET.SubElement(game_elem, "path").text ="./" + game.get('file', "")  
         name_elem = ET.SubElement(game_elem, "name").text = game.get('game', "")
         desc_elem = ET.SubElement(game_elem, "desc").text = game.get('description', "")  
+        ET.SubElement(game_elem, "developer").text = game.get('developer', "")  
+        ET.SubElement(game_elem, "sortname").text =  game.get('sort-by', "")  
         playcount_elem = ET.SubElement(game_elem, "playcount").text = "1"    
         lastplayed_elem = ET.SubElement(game_elem, "lastplayed").text = "" 
 
@@ -121,11 +137,11 @@ def transName(source_folder, target_folder, log_func=None):
                     # 生成合集gamelist
                     if all_games:
                         print("make gamelist collection:",collection_name,parent_dir,target_folder)
-                        create_gamelist_xml(all_games, target_folder, collection_name, log_func)
+                        create_gamelist_xml(all_games, target_folder, collection_name,collection_name, log_func)
                 else:
                     # 普通平台目录处理
                     parent_dir = os.path.dirname(root)
                     platform_name = os.path.basename(root)
                     print("make gamelist platform:",platform_name,parent_dir,target_folder)
-                    create_gamelist_xml(games, target_folder, platform_name, log_func)
+                    create_gamelist_xml(games, target_folder, platform_name,"", log_func)
 
