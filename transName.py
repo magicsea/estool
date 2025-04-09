@@ -76,6 +76,7 @@ def create_gamelist_xml(games, target_folder, subdirectories,collection_dir, log
     target_subfolder = os.path.join(target_folder, 'gamelists', subdirectories)   
     os.makedirs(target_subfolder, exist_ok=True)  
     xml_file_path = os.path.join(target_subfolder, 'gamelist.xml')  
+    print("create_gamelist_xml:",xml_file_path)
     with open(xml_file_path, 'w', encoding='utf-8') as f:  
         f.write(pretty_xml)  
  
@@ -96,52 +97,41 @@ def list_subdirectories(path):
 def transName(source_folder, target_folder, log_func=None):
     # 获取所有子目录
     subdirs = list_subdirectories(source_folder)
+    collections = {}  # 存储合集目录信息
     
-    # 遍历文件夹A下的所有子文件夹
+    # 第一次遍历：收集所有平台和合集信息
     for root, dirs, files in os.walk(source_folder):
         if 'metadata.pegasus.txt' in files:
             metadata_path = os.path.join(root, 'metadata.pegasus.txt')
             games = read_metadata(metadata_path)
             
             if games:
-                # 判断是否是合集目录
-                is_collection = False
                 parent_dir = os.path.dirname(root)
-                sibling_dirs = [d for d in os.listdir(parent_dir) 
-                              if os.path.isdir(os.path.join(parent_dir, d))]
+                platform_name = os.path.basename(root)
                 
-                # if len(sibling_dirs) > 1:
-                #     for d in sibling_dirs:
-                #         if os.path.exists(os.path.join(parent_dir, d, 'metadata.pegasus.txt')):
-                #             is_collection = True
-                #             break
-                
-                # 判断是否是平台集合目录
-                # 判断media_dir的父目录是否就是source_folder，确定是否是集合
+                # 判断是否是合集目录
                 is_collection = parent_dir != source_folder
-
+                
                 if is_collection:
-                    # 合集目录处理
                     collection_name = os.path.basename(parent_dir)
-                    target_subfolder = os.path.join(target_folder, 'gamelists', collection_name)
-                    os.makedirs(target_subfolder, exist_ok=True)
-                    
-                    # 读取合集下所有平台的metadata
-                    all_games = []
-                    for platform_dir in sibling_dirs:
-                        platform_path = os.path.join(parent_dir, platform_dir)
-                        if os.path.exists(os.path.join(platform_path, 'metadata.pegasus.txt')):
-                            platform_metadata = os.path.join(platform_path, 'metadata.pegasus.txt')
-                            all_games.extend(read_metadata(platform_metadata))
-                    
-                    # 生成合集gamelist
-                    if all_games:
-                        print("make gamelist collection:",collection_name,parent_dir,target_folder)
-                        create_gamelist_xml(all_games, target_folder, collection_name,collection_name, log_func)
+                    if collection_name not in collections:
+                        collections[collection_name] = {
+                            'path': parent_dir,
+                            'games': []
+                        }
+                    collections[collection_name]['games'].extend(games)
                 else:
-                    # 普通平台目录处理
-                    parent_dir = os.path.dirname(root)
-                    platform_name = os.path.basename(root)
-                    print("make gamelist platform:",platform_name,parent_dir,target_folder)
-                    create_gamelist_xml(games, target_folder, platform_name,"", log_func)
+                    # 普通平台目录立即处理
+                    create_gamelist_xml(games, target_folder, platform_name, "", log_func)
+    
+    # 第二次遍历：处理所有合集目录
+    for collection_name, collection_data in collections.items():
+        print("make gamelist collection:", collection_name, collection_data['path'], target_folder)
+        create_gamelist_xml(
+            collection_data['games'], 
+            target_folder, 
+            collection_name,
+            collection_name, 
+            log_func
+        )
 
