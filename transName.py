@@ -56,7 +56,7 @@ def create_gamelist_xml(games, target_folder, subdirectories,collection_dir,fold
         game_elem = ET.SubElement(root, "game")  
         # 如果collection_dir不为空，将path前要加上collection_dir
         if collection_dir:
-            path_elem = ET.SubElement(game_elem, "path").text = "./" + collection_dir + "/" + game.get('file', "")
+            path_elem = ET.SubElement(game_elem, "path").text = "./" + collection_dir + "/"+game.get('platform', "") +"/"+ game.get('file', "")
         else:
             path_elem = ET.SubElement(game_elem, "path").text = "./" + game.get('file', "")
 
@@ -110,11 +110,11 @@ def transName(source_folder, target_folder, log_func=None):
         if 'metadata.pegasus.txt' in files:
             metadata_path = os.path.join(root, 'metadata.pegasus.txt')
             games , metaName = read_metadata(metadata_path)
-            
+        
             if games:
                 parent_dir = os.path.dirname(root)
                 platform_name = os.path.basename(root)
-                
+                print("read_metadata111:",root,dirs,parent_dir,platform_name)
                 # 判断是否是合集目录
                 is_collection = parent_dir != source_folder
                 
@@ -127,7 +127,12 @@ def transName(source_folder, target_folder, log_func=None):
                             'folders': []
                         }
                     print("add new collection:",collection_name,parent_dir,platform_name,metaName)
-                    collections[collection_name]['games'].extend(games)
+                    # collections[collection_name]['games'].extend(games)
+                    for item in games:
+                        #print("range item:",item)
+                        item['platform'] = platform_name
+                        #print("range item2:",item)
+                        collections[collection_name]['games'].append(item)
                     collections[collection_name]['folders'].append({'path':platform_name,'name':metaName})
                 else:
                     # 普通平台目录立即处理
