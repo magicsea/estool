@@ -32,10 +32,10 @@ def transMedia(folder_a, folder_b, log_func, progress_callback=None):
         platform_dir = os.path.dirname(media_dir)
         parent_dir = os.path.dirname(platform_dir)
         is_collection = parent_dir != folder_a
-        print("parent_folder_name:",media_dir,parent_dir,folder_a,parent_folder_name,parent_parent_name,is_collection)
+        #print("parent_folder_name:",media_dir,parent_dir,folder_a,parent_folder_name,parent_parent_name,is_collection)
         if is_collection:
             # 平台集合目录处理
-            print("make collection:",download_media_dir, parent_folder_name)
+            print("make collection media:",download_media_dir, parent_folder_name)
             collection_dir = os.path.join(download_media_dir, parent_parent_name)
             if not os.path.exists(collection_dir):
                 os.makedirs(collection_dir)
@@ -67,7 +67,7 @@ def transMedia(folder_a, folder_b, log_func, progress_callback=None):
                         if not os.path.exists(subdir):
                             os.makedirs(subdir, exist_ok=True)
                         new_path = os.path.join(subdir, new_name)
-                        print("copy:",item_path,new_path)
+                        #print("copy:",item_path,new_path)
                         shutil.copy2(item_path, new_path)
                         processed_files += 1
                         

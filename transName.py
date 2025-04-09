@@ -78,21 +78,54 @@ def list_subdirectories(path):
 # target_folder = 'C:/迅雷下载/es/trom'  # 替换为你的目标文件夹的路径  
 
 def transName(source_folder, target_folder, log_func=None):
-    # 指定文件夹A的路径和目标文件夹的路径
-    # source_folder = 'C:/迅雷下载/es/Roms'  # 替换为你的文件夹A的路径
-    # target_folder = 'C:/迅雷下载/es/trom'  # 替换为你的目标文件夹的路径
-    xml_declaration = '<?xml version="1.0"?>\n'  
+    # 获取所有子目录
     subdirs = list_subdirectories(source_folder)
-    i = 0
-    # 遍历文件夹A下的所有子文件夹  
+    
+    # 遍历文件夹A下的所有子文件夹
     for root, dirs, files in os.walk(source_folder):
-        if 'metadata.pegasus.txt' in files:  
+        if 'metadata.pegasus.txt' in files:
             metadata_path = os.path.join(root, 'metadata.pegasus.txt')
             games = read_metadata(metadata_path)
             
-            if games:  
-                create_gamelist_xml(games, target_folder, subdirs[i],log_func)
-                i += 1
-    
-    #log_func(f"正在处理子目录: {subdirectories}")  # 使用传入的日志函数
+            if games:
+                # 判断是否是合集目录
+                is_collection = False
+                parent_dir = os.path.dirname(root)
+                sibling_dirs = [d for d in os.listdir(parent_dir) 
+                              if os.path.isdir(os.path.join(parent_dir, d))]
+                
+                # if len(sibling_dirs) > 1:
+                #     for d in sibling_dirs:
+                #         if os.path.exists(os.path.join(parent_dir, d, 'metadata.pegasus.txt')):
+                #             is_collection = True
+                #             break
+                
+                # 判断是否是平台集合目录
+                # 判断media_dir的父目录是否就是source_folder，确定是否是集合
+                is_collection = parent_dir != source_folder
+
+                if is_collection:
+                    # 合集目录处理
+                    collection_name = os.path.basename(parent_dir)
+                    target_subfolder = os.path.join(target_folder, 'gamelists', collection_name)
+                    os.makedirs(target_subfolder, exist_ok=True)
+                    
+                    # 读取合集下所有平台的metadata
+                    all_games = []
+                    for platform_dir in sibling_dirs:
+                        platform_path = os.path.join(parent_dir, platform_dir)
+                        if os.path.exists(os.path.join(platform_path, 'metadata.pegasus.txt')):
+                            platform_metadata = os.path.join(platform_path, 'metadata.pegasus.txt')
+                            all_games.extend(read_metadata(platform_metadata))
+                    
+                    # 生成合集gamelist
+                    if all_games:
+                        print("make gamelist collection:",collection_name,parent_dir,target_folder)
+                        create_gamelist_xml(all_games, target_folder, collection_name, log_func)
+                else:
+                    # 普通平台目录处理
+                    parent_dir = os.path.dirname(root)
+                    platform_name = os.path.basename(root)
+                    print("make gamelist platform:",platform_name,parent_dir,target_folder)
+                    create_gamelist_xml(games, target_folder, platform_name, log_func)
 
