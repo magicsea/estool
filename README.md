@@ -4,8 +4,8 @@
 # 使用步骤
 - 点上面浏览，选择要转的Roms目录（或者源代码里的Roms目录可以用来测试）
 - 点下面浏览，找可以空目录，用来输出gamelist和media文件
-- 点执行脚本
-
+- 源目录如果是天马包，点 天马转ES
+- 源目录如果是安伯尼克包，点 ABN转ES
 
 # gamelist.xml 文件格式说明
 根据代码中的 GamelistFileParser.cpp 文件，我可以看出 gamelist.xml 是 ES-DE 前端用来存储游戏元数据的文件。以下是 gamelist.xml 的基本格式和字段说明：
