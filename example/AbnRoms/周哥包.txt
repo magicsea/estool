@@ -1,0 +1,6 @@
+            # 第2个游戏/文件夹信息,dir:E:/project/estool/example/AbnRoms\snes
+            # path: ./Hack游戏/沉默之圣战命血时间不减.zip
+            # name: C 沉默之圣战命血时间不减
+            # image: ./media/images/042.沉默之圣战命血时间不减.png 
+            # marquee:
+            # video:

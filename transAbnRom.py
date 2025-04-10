@@ -1,6 +1,9 @@
 import os
 import sys
 import io
+import shutil
+import shutil
+import shutil
 import xml.etree.ElementTree as ET  
 
 # 确保stdout存在且可访问
@@ -92,22 +95,84 @@ def find_and_read_gamelists(src_dir):
     
     return gamelist_contents
 
+def copy_file(source_path, target_dir, path_info):
+    """
+    复制文件到目标目录，处理多级目录并修改文件名
+    
+    参数:
+        source_path: 源文件的完整路径
+        target_dir: 目标目录
+        path_info: 包含路径信息的字符串，用于创建目录和修改文件名
+    """
+    if os.path.exists(source_path):
+        # 提取多级目录和文件名前缀
+        path_dirs = os.path.dirname(path_info.lstrip('./'))
+        file_prefix = os.path.splitext(os.path.basename(path_info))[0]
+        
+        # 创建多级目录
+        target_sub_dir = os.path.join(target_dir, path_dirs)
+        if not os.path.exists(target_sub_dir):
+            os.makedirs(target_sub_dir)
+        
+        # 构建目标文件路径
+        target_file_name = f"{file_prefix}{os.path.splitext(os.path.basename(source_path))[1]}"
+        target_file_path = os.path.join(target_sub_dir, target_file_name)
+        
+        # 复制文件
+        shutil.copy2(source_path, target_file_path)
+
 def transAbnRom(src_dir, target_dir, log_func, progress_callback=None):
-    print("transAbROM:",src_dir)
+    print("transAbROM:", src_dir)
+    # 目标目录创建downloaded_media目录，检查存在
+    downloaded_media_dir = os.path.join(target_dir, 'downloaded_media')
+    if not os.path.exists(downloaded_media_dir):
+        os.makedirs(downloaded_media_dir)
+    
     gamelists = find_and_read_gamelists(src_dir)
     # 遍历每个游戏/文件夹的内容
     for i, (path, contents) in enumerate(gamelists.items()):
+
+        platname = os.path.basename(path)
+        # 复制gamelist.xml到目标目录的gamelists/{平台}目录下,目录不存在则创建
+        gamelists_dir = os.path.join(target_dir, 'gamelists', platname)
+        if not os.path.exists(gamelists_dir):
+            os.makedirs(gamelists_dir)
+        src_gamelist_path = os.path.join(path, 'gamelist.xml')
+        target_gamelist_path = os.path.join(gamelists_dir, 'gamelist.xml')
+        if os.path.exists(src_gamelist_path):
+            shutil.copy2(src_gamelist_path, target_gamelist_path)
+
+        # 尝试在downloaded_media下创建目录平台，如果不存在则创建
+        platform_dir = os.path.join(downloaded_media_dir, platname)
+        if not os.path.exists(platform_dir):
+            os.makedirs(platform_dir)
+        # 在平台目录下创建covers, marquees, videos目录
+        covers_dir = os.path.join(platform_dir, 'covers')
+        marquees_dir = os.path.join(platform_dir, 'marquees')
+        videos_dir = os.path.join(platform_dir, 'videos')
+        for dir_path in [covers_dir, marquees_dir, videos_dir]:
+            if not os.path.exists(dir_path):
+                os.makedirs(dir_path)
+
         # 遍历每个游戏/文件夹的内容
         for content in contents:
             # 提取path、name、image、marquee和video
-            print(f"第{i+1}个游戏/文件夹信息,dir:{path}")
-            print(f"path: {content.get('path', '')}")
-            print(f"name: {content.get('name', '')}")
-            print(f"image: {content.get('image', '')}")
-            print(f"marquee: {content.get('marquee', '')}")
-            print(f"video: {content.get('video', '')}")
-            print("-" * 50)
-    
+            path_info = content.get('path', '')
+
+            # 把image文件复制到downloaded_media\{平台}\covers目录下
+            if content.get('image'):
+                image_path = os.path.join(path, content['image'].lstrip('./'))
+                copy_file(image_path, covers_dir, path_info)
+
+            # 把marquee文件复制到downloaded_media\{平台}\marquees目录下
+            if content.get('marquee'):
+                marquee_path = os.path.join(path, content['marquee'].lstrip('./'))
+                copy_file(marquee_path, marquees_dir, path_info)
+
+            # 把video文件复制到downloaded_media\{平台}\videos目录下
+            if content.get('video'):
+                video_path = os.path.join(path, content['video'].lstrip('./'))
+                copy_file(video_path, videos_dir, path_info)
 
     log_func("All abn files have been processed.")
 
