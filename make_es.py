@@ -118,7 +118,7 @@ def create_gui():
                 except Exception as e:
                     error_msg = f"错误: {str(e)}"
                     log_message(error_msg)
-                    # 在主线程中显示错误和重新启用按钮
+                    # 修复：在lambda中不要引用外部的e变量，而是使用已捕获的error_msg
                     root.after(0, lambda: [
                         messagebox.showerror("错误", f"执行出错: {str(e)}"),
                         execute_button.config(state='normal')
