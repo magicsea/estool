@@ -14,10 +14,12 @@ import time
 from transName import transName 
 from transMedia import transMedia
 from transAbnRom import transAbnRom
+
+
 def create_gui():
     """创建图形用户界面"""
     root = tk.Tk()
-    root.title("天马转换ES工具")
+    root.title("ES转换工具")
     
     # 创建日志框架
     log_frame = tk.Frame(root)
@@ -153,11 +155,16 @@ def create_gui():
                     # 在主线程中重新启用按钮
                     root.after(0, lambda: execute_button.config(state='normal'))
                 except Exception as e:
+                    import traceback
+                    traceback.print_exc()
+                    
                     error_msg = f"错误: {str(e)}"
                     log_message(error_msg)
+                    print(error_msg)
                     # 修复：在lambda中不要引用外部的e变量，而是使用已捕获的error_msg
                     root.after(0, lambda: [
-                        messagebox.showerror("错误", f"执行出错: {str(e)}"),
+                        #messagebox.showerror("错误", f"执行出错: {str(e)}"),
+         
                         execute_button.config(state='normal')
                     ])
             
