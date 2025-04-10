@@ -13,7 +13,7 @@ import time
 # 修改导入语句
 from transName import transName 
 from transMedia import transMedia
-
+from transAbnRom import transAbnRom
 def create_gui():
     """创建图形用户界面"""
     root = tk.Tk()
@@ -92,7 +92,7 @@ def create_gui():
         source_path = source_entry.get()
         target_path = target_entry.get()
         if source_path and target_path:
-            log_message("开始执行转换...")
+            log_message("开始执行天马转换...")
             
             # 禁用执行按钮，防止重复点击
             execute_button = root.nametowidget('.!button3')  # 获取执行按钮
@@ -129,8 +129,47 @@ def create_gui():
         else:
             messagebox.showerror("错误", "请先选择源文件夹和目标文件夹")
     
+    def execute_abn_scripts():
+        source_path = source_entry.get()
+        target_path = target_entry.get()
+        if source_path and target_path:
+            log_message("开始执行abn转换...")
+            
+            # 禁用执行按钮，防止重复点击
+            execute_button = root.nametowidget('.!button3')  # 获取执行按钮
+            execute_button.config(state='disabled')
+            
+            # 在单独的线程中执行耗时操作
+            def run_conversion():
+                try:
+                    
+                    def progress_callback(current, total,currDir):
+                        log_message(f"处理媒体文件中:{current}/{total}  {currDir}")
+                        time.sleep(0.01)  # 短暂释放GIL锁
+                    
+                    transAbnRom(source_path, target_path, log_message, progress_callback)
+                    log_message("------media转换完成------")
+                    log_message("所有转换完成！")
+                    # 在主线程中重新启用按钮
+                    root.after(0, lambda: execute_button.config(state='normal'))
+                except Exception as e:
+                    error_msg = f"错误: {str(e)}"
+                    log_message(error_msg)
+                    # 修复：在lambda中不要引用外部的e变量，而是使用已捕获的error_msg
+                    root.after(0, lambda: [
+                        messagebox.showerror("错误", f"执行出错: {str(e)}"),
+                        execute_button.config(state='normal')
+                    ])
+            
+            # 启动转换线程
+            threading.Thread(target=run_conversion, daemon=True).start()
+        else:
+            messagebox.showerror("错误", "请先选择源文件夹和目标文件夹")
+    
     # 执行按钮
-    tk.Button(root, text="执行脚本", command=execute_scripts).grid(row=2, column=1, pady=10)
+    tk.Button(root, text="ABN转ES", command=execute_abn_scripts).grid(row=2, column=2, pady=10)
+    
+    tk.Button(root, text="天马转ES", command=execute_scripts).grid(row=2, column=0, pady=10)
     
     # 添加GitHub链接
     def open_github():
