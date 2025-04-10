@@ -3,8 +3,11 @@ import sys
 import io
 import xml.etree.ElementTree as ET  
 
-# 修改标准输出的编码为UTF-8
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+# 确保stdout存在且可访问
+if sys.stdout and hasattr(sys.stdout, 'buffer'):
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+else:
+    sys.stdout = open(os.devnull, 'w', encoding='utf-8')
 
 def parse_gamelist_xml(gamelist_path):
     """

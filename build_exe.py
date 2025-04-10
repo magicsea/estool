@@ -3,7 +3,7 @@ import os
 import shutil
 
 # 打包配置
-APP_NAME = '天马转换ES工具'
+APP_NAME = 'ES转换工具'
 SCRIPT_FILE = 'make_es.py'
 ICON_FILE = None  # 可以设置为图标路径，如'icon.ico'
 DIST_DIR = 'dist'
@@ -30,8 +30,12 @@ params = [
 if ICON_FILE and os.path.exists(ICON_FILE):
     params.append('--icon=%s' % ICON_FILE)
 
-# 添加数据文件（如需要）
-# params.extend(['--add-data', 'config.ini;.'])
+# 添加数据文件（包含所有依赖模块）
+params.extend([
+    '--add-data', 'transAbnRom.py;.',
+    '--add-data', 'transName.py;.', 
+    '--add-data', 'transMedia.py;.'
+])
 
 # 添加脚本文件
 params.append(SCRIPT_FILE)
