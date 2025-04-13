@@ -74,18 +74,19 @@ def transMedia(folder_a, folder_b, log_func, progress_callback=None):
                     item_path = os.path.join(root, item)
                     base_name, ext = os.path.splitext(os.path.basename(item_path).lower())
                     
-                    if base_name in ['boxfront', 'logo', 'video']:
+                    if base_name in ['boxfront', 'box_front', 'logo', 'video']:
                         relative_path = os.path.relpath(root, media_dir)
                         subdir_name = parent_folder_name if relative_path == '.' else os.path.basename(relative_path)
                         
                         new_name = f"{subdir_name}{ext}"
                         target_subdir = os.path.join(target_parent_folder, {
                             'boxfront': 'covers',
+                            'box_front': 'covers',
                             'logo': 'marquees',
                             'video': 'videos'
                         }[base_name])
                         new_path = os.path.join(target_subdir, new_name)
-                        
+                        print("copy platform file: ",item_path,new_path)
                         shutil.copy2(item_path, new_path)
                         processed_files += 1
                         
@@ -120,7 +121,7 @@ def transMedia(folder_a, folder_b, log_func, progress_callback=None):
             
             new_path = os.path.join(platform_subdir, file_info['new_name'])
 
-            #print("copy collection file: ",file_info['item_path'],new_path)
+            print("copy collection file: ",file_info['item_path'],new_path)
             shutil.copy2(file_info['item_path'], new_path)
             
             # 更新进度
